@@ -13,3 +13,13 @@ import AppHeader from './components/AppHeader.vue'
     </main>
   </div>
 </template>
+
+<style scoped>
+.app {
+  max-width: 1200px;
+  width: 100%;
+  min-width: 360px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+</style>
