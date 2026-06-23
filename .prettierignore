@@ -1,0 +1,16 @@
+# Version control and editor files
+.git
+.idea
+.vscode
+.qodo
+
+# Dependencies
+node_modules
+bun.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build output
+dist
+build
