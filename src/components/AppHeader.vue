@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useWeatherStore } from '../stores/weather.ts'
+import { useLanguageStore } from '../stores/language.ts'
 
-const weatherStore = useWeatherStore()
+const languageStore = useLanguageStore()
 const isMenuOpen = ref(false)
 
 const toggleMenu = () => {
@@ -28,16 +28,16 @@ const closeMenu = () => {
 
         <div class="language" role="group" aria-label="Мова інтерфейсу">
           <button
-            :class="{ active: weatherStore.language === 'UK' }"
-            :aria-pressed="weatherStore.language === 'UK'"
-            @click="weatherStore.changeLanguage('UK')"
+            :class="{ active: languageStore.language === 'UK' }"
+            :aria-pressed="languageStore.language === 'UK'"
+            @click="languageStore.changeLanguage('UK')"
           >
             UA
           </button>
           <button
-            :class="{ active: weatherStore.language === 'EN' }"
-            :aria-pressed="weatherStore.language === 'EN'"
-            @click="weatherStore.changeLanguage('EN')"
+            :class="{ active: languageStore.language === 'EN' }"
+            :aria-pressed="languageStore.language === 'EN'"
+            @click="languageStore.changeLanguage('EN')"
           >
             EN
           </button>
@@ -70,16 +70,16 @@ const closeMenu = () => {
 
         <div class="mobile-language" role="group" aria-label="Мова інтерфейсу">
           <button
-            :class="{ active: weatherStore.language === 'UK' }"
-            :aria-pressed="weatherStore.language === 'UK'"
-            @click="weatherStore.changeLanguage('UK')"
+            :class="{ active: languageStore.language === 'UK' }"
+            :aria-pressed="languageStore.language === 'UK'"
+            @click="languageStore.changeLanguage('UK')"
           >
             UA
           </button>
           <button
-            :class="{ active: weatherStore.language === 'EN' }"
-            :aria-pressed="weatherStore.language === 'EN'"
-            @click="weatherStore.changeLanguage('EN')"
+            :class="{ active: languageStore.language === 'EN' }"
+            :aria-pressed="languageStore.language === 'EN'"
+            @click="languageStore.changeLanguage('EN')"
           >
             EN
           </button>
