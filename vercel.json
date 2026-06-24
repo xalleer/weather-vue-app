@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/openweather/:path*",
+      "destination": "https://api.openweathermap.org/:path*"
+    }
+  ]
+}
