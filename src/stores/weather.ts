@@ -232,11 +232,7 @@ export const useWeatherStore = defineStore('weather', () => {
   const localDateKey = (unixSeconds: number, timezone: number) =>
     new Date((unixSeconds + timezone) * 1000).toISOString().slice(0, 10)
 
-  const isTimeOfDay = (
-    unixSeconds: number,
-    timezone: number,
-    timeOfDay: ForecastTimeOfDay,
-  ) => {
+  const isTimeOfDay = (unixSeconds: number, timezone: number, timeOfDay: ForecastTimeOfDay) => {
     const hour = new Date((unixSeconds + timezone) * 1000).getUTCHours()
     const isNight = hour >= 21 || hour < 6
     return timeOfDay === 'night' ? isNight : !isNight
@@ -254,8 +250,7 @@ export const useWeatherStore = defineStore('weather', () => {
     if (period === 'day') {
       if (timeOfDay === 'night') {
         const eveningIndex = matchingForecasts.findIndex(
-          (item) =>
-            new Date((item.dt + forecast.city.timezone) * 1000).getUTCHours() >= 21,
+          (item) => new Date((item.dt + forecast.city.timezone) * 1000).getUTCHours() >= 21,
         )
         const nightForecasts: typeof matchingForecasts = []
 
@@ -276,8 +271,9 @@ export const useWeatherStore = defineStore('weather', () => {
       }
 
       const today = localDateKey(forecast.list[0]?.dt ?? 0, forecast.city.timezone)
-      const todayForecasts = matchingForecasts
-        .filter((item) => localDateKey(item.dt, forecast.city.timezone) === today)
+      const todayForecasts = matchingForecasts.filter(
+        (item) => localDateKey(item.dt, forecast.city.timezone) === today,
+      )
       const forecasts = todayForecasts.length ? todayForecasts : matchingForecasts.slice(0, 4)
 
       return forecasts.map((item) => ({
@@ -322,11 +318,7 @@ export const useWeatherStore = defineStore('weather', () => {
       if (weatherRequestIds.get(block.id) !== requestId) return
       block.currentWeather = currentWeather
       block.weather = forecast
-      block.chartPoints = buildChartPoints(
-        forecast,
-        block.period,
-        block.timeOfDay,
-      )
+      block.chartPoints = buildChartPoints(forecast, block.period, block.timeOfDay)
       if (isFavoriteBlock(block)) persistFavorites()
       else persistBlocks()
     } catch (error) {

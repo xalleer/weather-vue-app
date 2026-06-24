@@ -29,8 +29,8 @@ onMounted(async () => {
     const currentFirstCity = weatherStore.blocks[0]?.selectedCity
     const isPreviouslyDetectedCity = Boolean(
       currentFirstCity &&
-        currentFirstCity.lat === userLocation.latitude &&
-        currentFirstCity.lon === userLocation.longitude,
+      currentFirstCity.lat === userLocation.latitude &&
+      currentFirstCity.lon === userLocation.longitude,
     )
     const fallbackCity = {
       name: locationName,

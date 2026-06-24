@@ -1,5 +1,73 @@
-# Vue 3 + TypeScript + Vite
+# Weather App
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Невеликий погодний застосунок на Vue 3. Можна знайти місто через пошук, додати кілька погодних карток і швидко перемикатися між прогнозом на день та на 5 днів.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+- [Демо на Vercel](https://weather-vue-app.vercel.app/)
+- [Репозиторій](https://github.com/xalleer/weather-vue-app)
+
+## Що реалізовано
+
+- пошук міст з автокомплітом через OpenWeather Geocoding API;
+- поточна погода та погодна іконка для вибраного міста;
+- графік температури на Chart.js без `vue-chartjs`;
+- прогноз на день і на 5 днів;
+- для прогнозу на 5 днів температура рахується як середнє значення за відповідний день;
+- окреме відображення денного та нічного прогнозу;
+- до п'яти незалежних погодних карток;
+- видалення картки з підтвердженням у модальному вікні;
+- список вибраних міст з обмеженням до п'яти;
+- збереження карток і вибраних міст у `localStorage`;
+- автоматичне визначення міста користувача за IP;
+- українська та англійська мови для інтерфейсу й відповідей API;
+- лоадери для пошуку та завантаження прогнозу;
+- адаптивна верстка для мобільних і десктопних екранів.
+
+Під час першого відкриття застосунок намагається визначити місто за IP і використовує його для першої картки. Якщо геолокація недоступна, картка залишається порожньою — місто можна вибрати вручну.
+
+## Стек
+
+- Vue 3 + Composition API
+- TypeScript
+- Pinia
+- Vue Router
+- Vue I18n
+- Axios
+- Chart.js
+- Vite
+
+CSS-фреймворки та UI-бібліотеки не використовувались. Компоненти, перемикачі й модальні вікна написані окремо для цього проєкту.
+
+## Запуск локально
+
+Потрібен Node.js або Bun. У репозиторії є `bun.lock`, тому нижче приклад саме з Bun.
+
+```bash
+git clone https://github.com/xalleer/weather-vue-app.git
+cd weather-vue-app
+bun install
+```
+
+Створіть файл `.env` у корені проєкту:
+
+```env
+VITE_OPENWEATHER_API_KEY=your_openweather_api_key
+VITE_IP_STACK_API_KEY=your_ipstack_api_key
+```
+
+Ключ OpenWeather можна отримати після реєстрації на [openweathermap.org](https://openweathermap.org/), ключ для визначення міста за IP — на [ipstack.com](https://ipstack.com/).
+
+Після цього запустіть dev-сервер:
+
+```bash
+bun run dev
+```
+
+## Корисні команди
+
+```bash
+bun run dev          # локальна розробка
+bun run build        # production-збірка
+bun run preview      # перегляд зібраного застосунку
+bun run lint         # перевірка ESLint
+bun run format:check # перевірка форматування
+```

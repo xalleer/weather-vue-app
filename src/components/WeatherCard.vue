@@ -334,16 +334,24 @@ const displayedIcon = computed(() => {
 }
 
 .loader-spinner {
-  position: absolute;
-  right: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   width: 16px;
   height: 16px;
   border: 2px solid var(--border-color);
   border-top-color: var(--primary-color);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+.searchbar-container > .loader-spinner {
+  position: absolute;
+  top: calc(50% - 8px);
+  right: 12px;
+}
+
+.weather-status > .loader-spinner {
+  width: 28px;
+  height: 28px;
+  border-width: 3px;
 }
 
 .search-error {
