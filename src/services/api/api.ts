@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useLanguageStore } from '../stores/language.ts'
+import { useLanguageStore } from '../../stores/language.ts'
 
 export const api = axios.create({
   baseURL: '/openweather',

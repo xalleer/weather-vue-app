@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import AppHeader from './components/AppHeader.vue'
+import ConfirmModal from "./components/ConfirmModal.vue";
+import {useWeatherStore} from "./stores/weather.ts";
+
+const weatherStore = useWeatherStore()
 </script>
 
 <template>
@@ -12,6 +16,15 @@ import AppHeader from './components/AppHeader.vue'
       </div>
     </main>
   </div>
+
+  <Teleport to="body">
+    <ConfirmModal
+      v-if="weatherStore.isShowConfirmModal"
+      @close="weatherStore.isShowConfirmModal = false"
+      @confirm="weatherStore.deleteBlock"
+    />
+  </Teleport>
+
 </template>
 
 <style scoped>
