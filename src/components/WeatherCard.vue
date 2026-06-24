@@ -3,6 +3,7 @@ import type {
   CurrentWeatherData,
   ForecastData,
   ForecastPeriod,
+  ForecastTimeOfDay,
   GeocodedCity,
   WeatherChartPoint,
 } from '../types'
@@ -22,6 +23,7 @@ export interface WeatherBlock {
   currentWeather: CurrentWeatherData | null
   chartPoints: WeatherChartPoint[]
   period: ForecastPeriod
+  timeOfDay: ForecastTimeOfDay
   isStar: boolean
 }
 
@@ -43,6 +45,7 @@ const emit = defineEmits<{
   (e: 'chooseFeature', block: WeatherBlock): void
   (e: 'deleteBlock', block: WeatherBlock): void
   (e: 'changePeriod', block: WeatherBlock, period: ForecastPeriod): void
+  (e: 'changeTimeOfDay', block: WeatherBlock, timeOfDay: ForecastTimeOfDay): void
 }>()
 
 const languageStore = useLanguageStore()
@@ -53,8 +56,17 @@ const periodButtons = computed(() => [
   { isActive: props.block.period === '5days', label: t('weather.fiveDays'), key: '5days' },
 ])
 
+const timeOfDayButtons = computed(() => [
+  { isActive: props.block.timeOfDay === 'day', label: t('weather.day'), key: 'day' },
+  { isActive: props.block.timeOfDay === 'night', label: t('weather.night'), key: 'night' },
+])
+
 const handlePeriodChange = (period: string) => {
   emit('changePeriod', props.block, period as ForecastPeriod)
+}
+
+const handleTimeOfDayChange = (timeOfDay: string) => {
+  emit('changeTimeOfDay', props.block, timeOfDay as ForecastTimeOfDay)
 }
 
 const localNamesKey = computed(() => {
@@ -62,18 +74,35 @@ const localNamesKey = computed(() => {
 })
 
 const displayedTemperature = computed(() => {
-  if (props.block.period === 'day') return props.block.currentWeather?.main.temp
   return props.block.chartPoints[0]?.temperature
 })
 
+const displayedForecast = computed(() => {
+  const forecast = props.block.weather
+  if (!forecast) return undefined
+
+  if (props.block.period === 'day' && props.block.chartPoints[0]) {
+    const firstPointKey = props.block.chartPoints[0].key
+    const firstDisplayedForecast = forecast.list.find(
+      (item) => String(item.dt + forecast.city.timezone) === firstPointKey,
+    )
+    if (firstDisplayedForecast) return firstDisplayedForecast
+  }
+
+  return forecast.list.find((item) => {
+    const timezone = props.block.weather?.city.timezone ?? 0
+    const hour = new Date((item.dt + timezone) * 1000).getUTCHours()
+    const isNight = hour >= 21 || hour < 6
+    return props.block.timeOfDay === 'night' ? isNight : !isNight
+  })
+})
+
 const displayedDescription = computed(() => {
-  if (props.block.period === 'day') return props.block.currentWeather?.weather[0]?.description
-  return props.block.weather?.list[0]?.weather[0]?.description
+  return displayedForecast.value?.weather[0]?.description
 })
 
 const displayedIcon = computed(() => {
-  if (props.block.period === 'day') return props.block.currentWeather?.weather[0]?.icon
-  return props.block.weather?.list[0]?.weather[0]?.icon
+  return displayedForecast.value?.weather[0]?.icon
 })
 </script>
 
@@ -175,6 +204,11 @@ const displayedIcon = computed(() => {
         :label="$t('weather.periodLabel')"
         :buttons="periodButtons"
         @change="handlePeriodChange"
+      />
+      <ToggleButtons
+        :label="$t('weather.timeOfDayLabel')"
+        :buttons="timeOfDayButtons"
+        @change="handleTimeOfDayChange"
       />
     </div>
 
@@ -301,7 +335,9 @@ const displayedIcon = computed(() => {
 
 .loader-spinner {
   position: absolute;
-  right: 12px;
+  right: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: 16px;
   height: 16px;
   border: 2px solid var(--border-color);

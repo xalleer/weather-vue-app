@@ -1,4 +1,5 @@
 export type ForecastPeriod = 'day' | '5days'
+export type ForecastTimeOfDay = 'day' | 'night'
 
 export interface WeatherChartPoint {
   key: string

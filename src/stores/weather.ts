@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
-import type { ForecastData, ForecastPeriod, GeocodedCity, WeatherChartPoint } from '../types'
+import type {
+  ForecastData,
+  ForecastPeriod,
+  ForecastTimeOfDay,
+  GeocodedCity,
+  WeatherChartPoint,
+} from '../types'
 import type { WeatherBlock } from '../components/WeatherCard.vue'
 import { weatherApi } from '../services/api/weather.ts'
 import { i18n } from '../services/i18n.ts'
@@ -29,6 +35,7 @@ export const useWeatherStore = defineStore('weather', () => {
     selectedCity: null,
     isStar: false,
     period: 'day',
+    timeOfDay: 'day',
     weather: null,
     currentWeather: null,
     chartPoints: [],
@@ -39,6 +46,7 @@ export const useWeatherStore = defineStore('weather', () => {
     ...block,
     currentWeather: block.currentWeather ?? null,
     chartPoints: block.chartPoints ?? [],
+    timeOfDay: block.timeOfDay ?? 'day',
   })
 
   const cityKey = (city: GeocodedCity) => `${city.lat.toFixed(4)}:${city.lon.toFixed(4)}`
@@ -138,6 +146,17 @@ export const useWeatherStore = defineStore('weather', () => {
     persistBlocks()
   }
 
+  const setDefaultCity = (city: GeocodedCity, replaceExisting = false) => {
+    const firstBlock = blocks.value[0]
+    if (!firstBlock || (firstBlock.selectedCity && !replaceExisting)) return
+
+    firstBlock.selectedCity = city
+    firstBlock.searchQuery = city.name
+    firstBlock.showDropdown = false
+    syncFavoriteState()
+    persistBlocks()
+  }
+
   const setActiveBlockId = (id: number) => {
     activeBlockId.value = id
   }
@@ -167,6 +186,7 @@ export const useWeatherStore = defineStore('weather', () => {
       selectedCity: block.selectedCity,
       searchQuery: block.selectedCity.name,
       period: block.period,
+      timeOfDay: block.timeOfDay,
       weather: block.weather,
       currentWeather: block.currentWeather,
       chartPoints: [...block.chartPoints],
@@ -212,32 +232,62 @@ export const useWeatherStore = defineStore('weather', () => {
   const localDateKey = (unixSeconds: number, timezone: number) =>
     new Date((unixSeconds + timezone) * 1000).toISOString().slice(0, 10)
 
+  const isTimeOfDay = (
+    unixSeconds: number,
+    timezone: number,
+    timeOfDay: ForecastTimeOfDay,
+  ) => {
+    const hour = new Date((unixSeconds + timezone) * 1000).getUTCHours()
+    const isNight = hour >= 21 || hour < 6
+    return timeOfDay === 'night' ? isNight : !isNight
+  }
+
   const buildChartPoints = (
     forecast: ForecastData,
     period: ForecastPeriod,
-    currentTimestamp: number,
-    currentTemperature: number,
+    timeOfDay: ForecastTimeOfDay,
   ): WeatherChartPoint[] => {
-    if (period === 'day') {
-      const today = localDateKey(currentTimestamp, forecast.city.timezone)
-      const forecastPoints = forecast.list
-        .filter((item) => localDateKey(item.dt, forecast.city.timezone) === today)
-        .map((item) => ({
-          key: String(item.dt + forecast.city.timezone),
-          temperature: item.main.temp,
-        }))
+    const matchingForecasts = forecast.list.filter((item) =>
+      isTimeOfDay(item.dt, forecast.city.timezone, timeOfDay),
+    )
 
-      return [
-        {
-          key: String(currentTimestamp + forecast.city.timezone),
-          temperature: currentTemperature,
-        },
-        ...forecastPoints,
-      ]
+    if (period === 'day') {
+      if (timeOfDay === 'night') {
+        const eveningIndex = matchingForecasts.findIndex(
+          (item) =>
+            new Date((item.dt + forecast.city.timezone) * 1000).getUTCHours() >= 21,
+        )
+        const nightForecasts: typeof matchingForecasts = []
+
+        if (eveningIndex >= 0) {
+          for (const item of matchingForecasts.slice(eveningIndex)) {
+            const hour = new Date((item.dt + forecast.city.timezone) * 1000).getUTCHours()
+            if (nightForecasts.length && hour >= 21) break
+            nightForecasts.push(item)
+          }
+        }
+
+        return (nightForecasts.length ? nightForecasts : matchingForecasts.slice(0, 3)).map(
+          (item) => ({
+            key: String(item.dt + forecast.city.timezone),
+            temperature: item.main.temp,
+          }),
+        )
+      }
+
+      const today = localDateKey(forecast.list[0]?.dt ?? 0, forecast.city.timezone)
+      const todayForecasts = matchingForecasts
+        .filter((item) => localDateKey(item.dt, forecast.city.timezone) === today)
+      const forecasts = todayForecasts.length ? todayForecasts : matchingForecasts.slice(0, 4)
+
+      return forecasts.map((item) => ({
+        key: String(item.dt + forecast.city.timezone),
+        temperature: item.main.temp,
+      }))
     }
 
     const dailyTemperatures = new Map<string, number[]>()
-    forecast.list.forEach((item) => {
+    matchingForecasts.forEach((item) => {
       const date = localDateKey(item.dt, forecast.city.timezone)
       const temperatures = dailyTemperatures.get(date) ?? []
       temperatures.push(item.main.temp)
@@ -275,8 +325,7 @@ export const useWeatherStore = defineStore('weather', () => {
       block.chartPoints = buildChartPoints(
         forecast,
         block.period,
-        currentWeather.dt,
-        currentWeather.main.temp,
+        block.timeOfDay,
       )
       if (isFavoriteBlock(block)) persistFavorites()
       else persistBlocks()
@@ -311,6 +360,15 @@ export const useWeatherStore = defineStore('weather', () => {
     else persistBlocks()
   }
 
+  const changeTimeOfDay = (block: WeatherBlock, timeOfDay: ForecastTimeOfDay) => {
+    block.timeOfDay = timeOfDay
+    if (block.weather) {
+      block.chartPoints = buildChartPoints(block.weather, block.period, timeOfDay)
+    }
+    if (isFavoriteBlock(block)) persistFavorites()
+    else persistBlocks()
+  }
+
   return {
     blocks,
     favoriteBlocks,
@@ -325,6 +383,7 @@ export const useWeatherStore = defineStore('weather', () => {
     loadBlocks,
     searchCities,
     selectCity,
+    setDefaultCity,
     addBlock,
     setActiveBlockId,
     changeFavorite,
@@ -332,6 +391,7 @@ export const useWeatherStore = defineStore('weather', () => {
     showConfirmModal,
     loadWeatherForBlock,
     changePeriod,
+    changeTimeOfDay,
     loadWeatherForBlocks,
   }
 })

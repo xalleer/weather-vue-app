@@ -56,6 +56,7 @@ const handleSelectCity = (
         @click="weatherStore.setActiveBlockId(block.id)"
         @handle-input="handleInput"
         @change-period="weatherStore.changePeriod"
+        @change-time-of-day="weatherStore.changeTimeOfDay"
         @handle-focus="handleFocus"
         @select-city="handleSelectCity"
         @delete-block="weatherStore.showConfirmModal"
@@ -78,5 +79,23 @@ const handleSelectCity = (
   flex-wrap: wrap;
   gap: 20px;
   padding: 20px 0;
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .add-block-wrapper {
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .wrapper {
+    gap: 12px;
+    padding: 12px 0;
+  }
 }
 </style>

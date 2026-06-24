@@ -18,7 +18,9 @@
   "weather": {
     "searchPlaceholder": "Пошук міста...",
     "periodLabel": "Період прогнозу",
+    "timeOfDayLabel": "Час доби",
     "day": "День",
+    "night": "Ніч",
     "fiveDays": "5 днів",
     "temperature": "Температура, °C",
     "addFavorite": "Додати місто у вибране",

@@ -13,6 +13,17 @@ const searchCities = async (query: string, signal?: AbortSignal) => {
   return res.data
 }
 
+const getCityByCoordinates = async (lat: number, lon: number) => {
+  const res: AxiosResponse<GeocodedCity[]> = await api.get('/geo/1.0/reverse', {
+    params: {
+      lat,
+      lon,
+      limit: 1,
+    },
+  })
+  return res.data[0] ?? null
+}
+
 const getWeather = async (lat: number, lon: number) => {
   const res: AxiosResponse<ForecastData> = await api.get('/data/2.5/forecast', {
     params: { lat, lon },
@@ -27,4 +38,4 @@ const getCurrentWeather = async (lat: number, lon: number) => {
   return res.data
 }
 
-export const weatherApi = { searchCities, getWeather, getCurrentWeather }
+export const weatherApi = { searchCities, getCityByCoordinates, getWeather, getCurrentWeather }

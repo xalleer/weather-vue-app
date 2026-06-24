@@ -18,7 +18,9 @@
   "weather": {
     "searchPlaceholder": "Search city...",
     "periodLabel": "Forecast period",
+    "timeOfDayLabel": "Time of day",
     "day": "Day",
+    "night": "Night",
     "fiveDays": "5 days",
     "temperature": "Temperature, °C",
     "addFavorite": "Add city to favorites",

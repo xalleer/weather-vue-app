@@ -24,6 +24,7 @@ const { t } = useI18n()
         @choose-feature="weatherStore.changeFavorite(block)"
         @click="weatherStore.setActiveBlockId(block.id)"
         @change-period="weatherStore.changePeriod"
+        @change-time-of-day="weatherStore.changeTimeOfDay"
       />
     </template>
     <p v-if="weatherStore.favoriteBlocks.length === 0">{{ t('favorites.empty') }}</p>
@@ -37,5 +38,19 @@ const { t } = useI18n()
   flex-wrap: wrap;
   gap: 20px;
   padding: 20px 0;
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .wrapper,
+  .info {
+    gap: 12px;
+    padding: 12px 0;
+  }
 }
 </style>
