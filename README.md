@@ -2,7 +2,7 @@
 
 Невеликий погодний застосунок на Vue 3. Можна знайти місто через пошук, додати кілька погодних карток і швидко перемикатися між прогнозом на день та на 5 днів.
 
-- [Демо на Vercel](https://weather-vue-app.vercel.app/)
+- [Демо на Vercel](https://weather-vue-app-wine.vercel.app/)
 - [Репозиторій](https://github.com/xalleer/weather-vue-app)
 
 ## Що реалізовано
