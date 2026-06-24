@@ -2,7 +2,6 @@
 defineProps<{
   variant: 'primary' | 'danger' | 'outline' | 'icon'
 }>()
-
 </script>
 
 <template>
@@ -37,7 +36,7 @@ defineProps<{
 .icon:hover {
   background: var(--primary-color);
 }
-.icon:hover svg path{
+.icon:hover svg path {
   fill: var(--surface-color);
 }
 </style>

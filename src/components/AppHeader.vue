@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useLanguageStore } from '../stores/language.ts'
+import ToggleButtons from './ui/ToggleButtons.vue'
 
 const languageStore = useLanguageStore()
 const isMenuOpen = ref(false)
+
+const languageButtons = computed(() => [
+  { isActive: languageStore.language === 'UK', label: 'UA', key: 'UK' },
+  { isActive: languageStore.language === 'EN', label: 'EN', key: 'EN' },
+])
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
@@ -12,6 +18,12 @@ const toggleMenu = () => {
 
 const closeMenu = () => {
   isMenuOpen.value = false
+}
+
+const handleLanguageChange = (language: string) => {
+  if (language === 'UK' || language === 'EN') {
+    languageStore.changeLanguage(language)
+  }
 }
 </script>
 
@@ -26,22 +38,11 @@ const closeMenu = () => {
           <RouterLink to="/favorites">{{ $t('header.nav.favorites') }}</RouterLink>
         </nav>
 
-        <div class="language" role="group" aria-label="Мова інтерфейсу">
-          <button
-            :class="{ active: languageStore.language === 'UK' }"
-            :aria-pressed="languageStore.language === 'UK'"
-            @click="languageStore.changeLanguage('UK')"
-          >
-            UA
-          </button>
-          <button
-            :class="{ active: languageStore.language === 'EN' }"
-            :aria-pressed="languageStore.language === 'EN'"
-            @click="languageStore.changeLanguage('EN')"
-          >
-            EN
-          </button>
-        </div>
+        <ToggleButtons
+          aria-label="Мова інтерфейсу"
+          :buttons="languageButtons"
+          @on-click="handleLanguageChange"
+        />
       </div>
 
       <button
@@ -68,22 +69,11 @@ const closeMenu = () => {
           </RouterLink>
         </nav>
 
-        <div class="mobile-language" role="group" aria-label="Мова інтерфейсу">
-          <button
-            :class="{ active: languageStore.language === 'UK' }"
-            :aria-pressed="languageStore.language === 'UK'"
-            @click="languageStore.changeLanguage('UK')"
-          >
-            UA
-          </button>
-          <button
-            :class="{ active: languageStore.language === 'EN' }"
-            :aria-pressed="languageStore.language === 'EN'"
-            @click="languageStore.changeLanguage('EN')"
-          >
-            EN
-          </button>
-        </div>
+        <ToggleButtons
+          aria-label="Мова інтерфейсу"
+          :buttons="languageButtons"
+          @on-click="handleLanguageChange"
+        />
       </div>
     </div>
   </header>
@@ -156,38 +146,6 @@ const closeMenu = () => {
   color: var(--primary-color);
   background-color: color-mix(in srgb, var(--primary-color) 12%, transparent);
   font-weight: 600;
-}
-
-.language {
-  display: flex;
-  padding: 3px;
-  border-radius: 20px;
-  border: 1px solid var(--border-color);
-  background-color: var(--background-color);
-  flex-shrink: 0;
-}
-
-.language button {
-  padding: 4px 10px;
-  border-radius: 16px;
-  border: none;
-  background-color: transparent;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background-color 0.25s ease,
-    color 0.25s ease;
-}
-
-.language button:hover:not(.active) {
-  color: var(--text-color);
-}
-
-.language button.active {
-  background-color: var(--primary-color);
-  color: #fff;
 }
 
 .burger-btn {
@@ -294,15 +252,6 @@ const closeMenu = () => {
   color: var(--primary-color);
   background-color: color-mix(in srgb, var(--primary-color) 12%, transparent);
   font-weight: 600;
-}
-
-.mobile-language {
-  display: inline-flex;
-  padding: 3px;
-  border-radius: 20px;
-  border: 1px solid var(--border-color);
-  background-color: var(--background-color);
-  align-self: flex-start;
 }
 
 .mobile-language button {

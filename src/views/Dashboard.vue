@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import {useWeatherStore} from '../stores/weather.ts'
-import UIButton from "../components/ui/UIButton.vue";
-import WeatherCard, {type WeatherBlock} from "../components/WeatherCard.vue";
-import {onMounted} from "vue";
+import { useWeatherStore } from '../stores/weather.ts'
+import UIButton from '../components/ui/UIButton.vue'
+import WeatherCard, { type WeatherBlock } from '../components/WeatherCard.vue'
+import { onMounted } from 'vue'
 
 const weatherStore = useWeatherStore()
 
+const handleInput = (block: WeatherBlock, query: string) => {
+  block.searchQuery = query
+  weatherStore.searchCities(block.id, query)
+}
+
 const handleFocus = (block: WeatherBlock) => {
-  console.log(block)
   block.showDropdown = true
   weatherStore.blocks.forEach((b) => {
     if (b.id !== block.id) {
@@ -17,21 +21,21 @@ const handleFocus = (block: WeatherBlock) => {
   weatherStore.activeBlockId = block.id
   block.showDropdown = true
   if (block.searchQuery) {
-    weatherStore.searchCities(block.searchQuery)
+    weatherStore.searchCities(block.id, block.searchQuery)
   }
 }
 
-const handleSelectCity = (block: WeatherBlock) => {
-  console.log(block)
-  block.showDropdown = false
-  block.selectedCity = weatherStore.searchResults[0]
-  localStorage.setItem('blocks', JSON.stringify(weatherStore.blocks))
+const handleSelectCity = (
+  block: WeatherBlock,
+  city: Parameters<typeof weatherStore.selectCity>[1],
+) => {
+  weatherStore.selectCity(block, city)
 }
 
 onMounted(() => {
   weatherStore.loadBlocks()
+  weatherStore.loadWeatherForBlocks()
 })
-
 </script>
 
 <template>
@@ -41,17 +45,21 @@ onMounted(() => {
   </section>
   <section class="wrapper">
     <template v-for="block of weatherStore.blocks" :key="block.id">
-      <WeatherCard :block="block"
-                   :error="weatherStore.error"
-                   :filteredCities="weatherStore.searchResults"
-                   :isLoading="weatherStore.isLoading"
-                   :activeBlockId="weatherStore.activeBlockId"
-                   @chooseFeature="weatherStore.changeFavorite(block)"
-                   @click="weatherStore.setActiveBlockId(block.id)"
-                   @handleInput="weatherStore.searchCities($event.searchQuery)"
-                   @handleFocus="handleFocus"
-                   @selectCity="handleSelectCity"
-                   @deleteBlock="weatherStore.showConfirmModal"
+      <WeatherCard
+        :block="block"
+        :error="weatherStore.searchErrorByBlock[block.id] ?? null"
+        :filtered-cities="weatherStore.searchResultsByBlock[block.id] ?? []"
+        :is-loading="weatherStore.searchLoadingByBlock[block.id] ?? false"
+        :weather-loading="weatherStore.weatherLoadingByBlock[block.id] ?? false"
+        :weather-error="weatherStore.weatherErrorByBlock[block.id] ?? null"
+        :active-block-id="weatherStore.activeBlockId"
+        @choose-feature="weatherStore.changeFavorite(block)"
+        @click="weatherStore.setActiveBlockId(block.id)"
+        @handle-input="handleInput"
+        @change-period="weatherStore.changePeriod"
+        @handle-focus="handleFocus"
+        @select-city="handleSelectCity"
+        @delete-block="weatherStore.showConfirmModal"
       />
     </template>
   </section>
@@ -72,6 +80,4 @@ onMounted(() => {
   gap: 20px;
   padding: 20px 0;
 }
-
-
 </style>
