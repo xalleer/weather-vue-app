@@ -3,6 +3,7 @@ import { Chart, registerables } from 'chart.js'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useLanguageStore } from '../stores/language.ts'
 import type { ForecastPeriod, WeatherChartPoint } from '../types'
+import { useI18n } from 'vue-i18n'
 
 Chart.register(...registerables)
 
@@ -12,6 +13,7 @@ const props = defineProps<{
 }>()
 
 const languageStore = useLanguageStore()
+const { t } = useI18n()
 const canvas = ref<HTMLCanvasElement | null>(null)
 let chart: Chart<'line'> | null = null
 
@@ -45,7 +47,7 @@ const renderChart = () => {
       labels: labels.value,
       datasets: [
         {
-          label: languageStore.apiLanguage === 'uk' ? 'Температура, °C' : 'Temperature, °C',
+          label: t('weather.temperature'),
           data: props.points.map((point) => point.temperature),
           borderColor: '#3b82f6',
           backgroundColor: 'rgba(59, 130, 246, 0.12)',

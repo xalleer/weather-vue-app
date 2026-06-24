@@ -1,8 +1,42 @@
 {
   "header": {
+    "language": "Interface language",
+    "menu": "Open navigation menu",
     "nav": {
       "weather": "Weather",
       "favorites": "Favorites"
     }
+  },
+  "dashboard": {
+    "title": "Weather",
+    "newBlock": "New block"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "empty": "You have not added any cities yet"
+  },
+  "weather": {
+    "searchPlaceholder": "Search city...",
+    "periodLabel": "Forecast period",
+    "day": "Day",
+    "fiveDays": "5 days",
+    "temperature": "Temperature, °C",
+    "addFavorite": "Add city to favorites",
+    "removeFavorite": "Remove city from favorites",
+    "deleteBlock": "Delete block"
+  },
+  "modal": {
+    "title": "Delete block?",
+    "message": "This action cannot be undone.",
+    "confirm": "Delete",
+    "cancel": "Cancel"
+  },
+  "favoriteLimit": {
+    "title": "Limit reached",
+    "message": "Remove a city from favorites before adding another one. The maximum is 5.",
+    "close": "Got it"
+  },
+  "errors": {
+    "unknown": "An unknown error occurred"
   }
 }

@@ -11,6 +11,7 @@ import { useLanguageStore } from '../stores/language.ts'
 import UIButton from './ui/UIButton.vue'
 import ToggleButtons from './ui/ToggleButtons.vue'
 import WeatherChart from './WeatherChart.vue'
+import { useI18n } from 'vue-i18n'
 
 export interface WeatherBlock {
   id: number
@@ -32,6 +33,7 @@ const props = defineProps<{
   error: string | null
   weatherLoading: boolean
   weatherError: string | null
+  allowDelete: boolean
 }>()
 
 const emit = defineEmits<{
@@ -44,10 +46,11 @@ const emit = defineEmits<{
 }>()
 
 const languageStore = useLanguageStore()
+const { t } = useI18n()
 
 const periodButtons = computed(() => [
-  { isActive: props.block.period === 'day', label: 'Day', key: 'day' },
-  { isActive: props.block.period === '5days', label: '5 Days', key: '5days' },
+  { isActive: props.block.period === 'day', label: t('weather.day'), key: 'day' },
+  { isActive: props.block.period === '5days', label: t('weather.fiveDays'), key: '5days' },
 ])
 
 const handlePeriodChange = (period: string) => {
@@ -83,7 +86,7 @@ const displayedIcon = computed(() => {
             :value="block.searchQuery"
             autocomplete="address-level2"
             type="search"
-            placeholder="Пошук міста..."
+            :placeholder="$t('weather.searchPlaceholder')"
             class="search-input"
             @input="$emit('handleInput', block, ($event.target as HTMLInputElement).value)"
             @focus="$emit('handleFocus', block)"
@@ -123,7 +126,12 @@ const displayedIcon = computed(() => {
         }}</span>
       </div>
 
-      <UIButton v-if="block.selectedCity" variant="icon" @click="$emit('chooseFeature', block)">
+      <UIButton
+        v-if="block.selectedCity"
+        variant="icon"
+        :aria-label="block.isStar ? $t('weather.removeFavorite') : $t('weather.addFavorite')"
+        @click="$emit('chooseFeature', block)"
+      >
         <svg
           v-if="!block.isStar"
           xmlns="http://www.w3.org/2000/svg"
@@ -143,7 +151,12 @@ const displayedIcon = computed(() => {
           />
         </svg>
       </UIButton>
-      <UIButton variant="icon" @click="$emit('deleteBlock', block)">
+      <UIButton
+        v-if="allowDelete"
+        variant="icon"
+        :aria-label="$t('weather.deleteBlock')"
+        @click="$emit('deleteBlock', block)"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
           <path
             fill="none"
@@ -158,7 +171,11 @@ const displayedIcon = computed(() => {
     </div>
 
     <div v-if="block.selectedCity" class="toggles">
-      <ToggleButtons aria-label="Період" :buttons="periodButtons" @on-click="handlePeriodChange" />
+      <ToggleButtons
+        :label="$t('weather.periodLabel')"
+        :buttons="periodButtons"
+        @change="handlePeriodChange"
+      />
     </div>
 
     <div v-if="block.selectedCity" class="weather-container">

@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import UiButton from './ui/UIButton.vue'
 
-const emit = defineEmits<{
+defineProps<{
+  title: string
+  message: string
+  closeLabel: string
+}>()
+
+defineEmits<{
   (e: 'close'): void
-  (e: 'confirm'): void
 }>()
 </script>
 
 <template>
-  <div class="overlay" @click="emit('close')"></div>
-  <div class="modal" role="dialog" aria-modal="true" :aria-label="$t('modal.title')">
+  <div class="overlay" @click="$emit('close')"></div>
+  <div class="modal" role="dialog" aria-modal="true" :aria-label="title">
     <header>
-      <h2>{{ $t('modal.title') }}</h2>
+      <h2>{{ title }}</h2>
     </header>
-
-    <p>{{ $t('modal.message') }}</p>
-
+    <p>{{ message }}</p>
     <footer>
-      <UiButton variant="danger" @click="emit('confirm')">
-        {{ $t('modal.confirm') }}
-      </UiButton>
-      <UiButton variant="outline" @click="emit('close')">{{ $t('modal.cancel') }}</UiButton>
+      <UiButton variant="outline" @click="$emit('close')">{{ closeLabel }}</UiButton>
     </footer>
   </div>
 </template>
@@ -55,6 +55,5 @@ const emit = defineEmits<{
 footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
 }
 </style>

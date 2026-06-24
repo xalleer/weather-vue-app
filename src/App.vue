@@ -2,8 +2,15 @@
 import AppHeader from './components/AppHeader.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
 import { useWeatherStore } from './stores/weather.ts'
+import InfoModal from './components/InfoModal.vue'
+import { onMounted } from 'vue'
 
 const weatherStore = useWeatherStore()
+
+onMounted(async () => {
+  weatherStore.loadBlocks()
+  await weatherStore.loadWeatherForBlocks()
+})
 </script>
 
 <template>
@@ -22,6 +29,13 @@ const weatherStore = useWeatherStore()
       v-if="weatherStore.isShowConfirmModal"
       @close="weatherStore.isShowConfirmModal = false"
       @confirm="weatherStore.deleteBlock"
+    />
+    <InfoModal
+      v-if="weatherStore.isShowFavoriteLimitModal"
+      :title="$t('favoriteLimit.title')"
+      :message="$t('favoriteLimit.message')"
+      :close-label="$t('favoriteLimit.close')"
+      @close="weatherStore.isShowFavoriteLimitModal = false"
     />
   </Teleport>
 </template>

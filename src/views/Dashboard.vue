@@ -2,9 +2,10 @@
 import { useWeatherStore } from '../stores/weather.ts'
 import UIButton from '../components/ui/UIButton.vue'
 import WeatherCard, { type WeatherBlock } from '../components/WeatherCard.vue'
-import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const weatherStore = useWeatherStore()
+const { t } = useI18n()
 
 const handleInput = (block: WeatherBlock, query: string) => {
   block.searchQuery = query
@@ -31,17 +32,14 @@ const handleSelectCity = (
 ) => {
   weatherStore.selectCity(block, city)
 }
-
-onMounted(() => {
-  weatherStore.loadBlocks()
-  weatherStore.loadWeatherForBlocks()
-})
 </script>
 
 <template>
   <section class="add-block-wrapper">
-    <h2>Погода</h2>
-    <UIButton variant="primary" @click="weatherStore.addBlock()">Новий блок</UIButton>
+    <h2>{{ t('dashboard.title') }}</h2>
+    <UIButton variant="primary" @click="weatherStore.addBlock()">
+      {{ t('dashboard.newBlock') }}
+    </UIButton>
   </section>
   <section class="wrapper">
     <template v-for="block of weatherStore.blocks" :key="block.id">
@@ -53,6 +51,7 @@ onMounted(() => {
         :weather-loading="weatherStore.weatherLoadingByBlock[block.id] ?? false"
         :weather-error="weatherStore.weatherErrorByBlock[block.id] ?? null"
         :active-block-id="weatherStore.activeBlockId"
+        :allow-delete="weatherStore.blocks.length > 1"
         @choose-feature="weatherStore.changeFavorite(block)"
         @click="weatherStore.setActiveBlockId(block.id)"
         @handle-input="handleInput"

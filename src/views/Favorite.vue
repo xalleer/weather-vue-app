@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { useWeatherStore } from '../stores/weather.ts'
 import WeatherCard from '../components/WeatherCard.vue'
+import { useI18n } from 'vue-i18n'
 
 const weatherStore = useWeatherStore()
+const { t } = useI18n()
 </script>
 <template>
   <section class="info">
-    <h2>Збережені</h2>
+    <h2>{{ t('favorites.title') }}</h2>
   </section>
   <section class="wrapper">
     <template v-for="block of weatherStore.favoriteBlocks" :key="block.id">
@@ -18,11 +20,13 @@ const weatherStore = useWeatherStore()
         :weather-loading="weatherStore.weatherLoadingByBlock[block.id] ?? false"
         :weather-error="weatherStore.weatherErrorByBlock[block.id] ?? null"
         :active-block-id="weatherStore.activeBlockId"
+        :allow-delete="false"
         @choose-feature="weatherStore.changeFavorite(block)"
         @click="weatherStore.setActiveBlockId(block.id)"
-        @delete-block="weatherStore.showConfirmModal"
+        @change-period="weatherStore.changePeriod"
       />
     </template>
+    <p v-if="weatherStore.favoriteBlocks.length === 0">{{ t('favorites.empty') }}</p>
   </section>
 </template>
 

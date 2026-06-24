@@ -1,20 +1,23 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import axios from 'axios'
 import type { ForecastData, ForecastPeriod, GeocodedCity, WeatherChartPoint } from '../types'
 import type { WeatherBlock } from '../components/WeatherCard.vue'
 import { weatherApi } from '../services/api/weather.ts'
+import { i18n } from '../services/i18n.ts'
 
 export const useWeatherStore = defineStore('weather', () => {
   const blocks = ref<WeatherBlock[]>([])
+  const favoriteBlocks = ref<WeatherBlock[]>([])
   const searchResultsByBlock = ref<Record<number, GeocodedCity[]>>({})
   const searchLoadingByBlock = ref<Record<number, boolean>>({})
   const searchErrorByBlock = ref<Record<number, string | null>>({})
   const weatherLoadingByBlock = ref<Record<number, boolean>>({})
   const weatherErrorByBlock = ref<Record<number, string | null>>({})
   const activeBlockId = ref<number | null>(null)
-
   const isShowConfirmModal = ref(false)
+  const isShowFavoriteLimitModal = ref(false)
+
   const debounceTimeouts = new Map<number, ReturnType<typeof setTimeout>>()
   const searchControllers = new Map<number, AbortController>()
   const weatherRequestIds = new Map<number, number>()
@@ -31,22 +34,58 @@ export const useWeatherStore = defineStore('weather', () => {
     chartPoints: [],
   })
 
-  const loadBlocks = () => {
-    const blocksData: WeatherBlock[] = JSON.parse(localStorage.getItem('blocks') || '[]')
-    blocks.value =
-      blocksData.length > 0
-        ? blocksData.map((block) => ({
-            ...createBlock(block.id),
-            ...block,
-            currentWeather: block.currentWeather ?? null,
-            chartPoints: block.chartPoints ?? [],
-          }))
-        : [createBlock(1)]
+  const hydrateBlock = (block: WeatherBlock): WeatherBlock => ({
+    ...createBlock(block.id),
+    ...block,
+    currentWeather: block.currentWeather ?? null,
+    chartPoints: block.chartPoints ?? [],
+  })
+
+  const cityKey = (city: GeocodedCity) => `${city.lat.toFixed(4)}:${city.lon.toFixed(4)}`
+  const persistBlocks = () => localStorage.setItem('blocks', JSON.stringify(blocks.value))
+  const persistFavorites = () =>
+    localStorage.setItem('favorites', JSON.stringify(favoriteBlocks.value))
+
+  const syncFavoriteState = () => {
+    const favoriteKeys = new Set(
+      favoriteBlocks.value
+        .filter((block) => block.selectedCity)
+        .map((block) => cityKey(block.selectedCity as GeocodedCity)),
+    )
+    blocks.value.forEach((block) => {
+      block.isStar = Boolean(block.selectedCity && favoriteKeys.has(cityKey(block.selectedCity)))
+    })
   }
 
-  const favoriteBlocks = computed(() => {
-    return blocks.value.filter((block) => block.isStar)
-  })
+  const loadBlocks = () => {
+    const storedBlocks: WeatherBlock[] = JSON.parse(localStorage.getItem('blocks') || '[]')
+    const favoritesJson = localStorage.getItem('favorites')
+    const storedFavorites: WeatherBlock[] = JSON.parse(favoritesJson || '[]')
+
+    blocks.value = storedBlocks.length ? storedBlocks.map(hydrateBlock) : [createBlock(1)]
+    const migratedFavorites = favoritesJson
+      ? storedFavorites
+      : storedBlocks
+          .filter((block) => block.isStar && block.selectedCity)
+          .map((block, index) => ({
+            ...block,
+            id: Math.max(0, ...blocks.value.map((item) => item.id)) + index + 1,
+          }))
+    favoriteBlocks.value = migratedFavorites.map((block) => ({
+      ...hydrateBlock(block),
+      isStar: true,
+    }))
+    syncFavoriteState()
+    persistBlocks()
+    persistFavorites()
+  }
+
+  const nextId = () =>
+    Math.max(
+      0,
+      ...blocks.value.map((block) => block.id),
+      ...favoriteBlocks.value.map((block) => block.id),
+    ) + 1
 
   const searchCities = (blockId: number, query: string) => {
     const pendingTimeout = debounceTimeouts.get(blockId)
@@ -72,16 +111,15 @@ export const useWeatherStore = defineStore('weather', () => {
       searchControllers.set(blockId, controller)
 
       try {
-        const res = await weatherApi.searchCities(query, controller.signal)
-        searchResultsByBlock.value[blockId] = res
-      } catch (e) {
-        if (axios.isCancel(e)) return
-
-        if (axios.isAxiosError(e)) {
-          searchErrorByBlock.value[blockId] = e.response?.data?.message || e.message
-        } else {
-          searchErrorByBlock.value[blockId] = (e as Error).message || 'Unknown error occurred'
-        }
+        searchResultsByBlock.value[blockId] = await weatherApi.searchCities(
+          query,
+          controller.signal,
+        )
+      } catch (error) {
+        if (axios.isCancel(error)) return
+        searchErrorByBlock.value[blockId] = axios.isAxiosError(error)
+          ? error.response?.data?.message || error.message
+          : (error as Error).message || i18n.global.t('errors.unknown')
         searchResultsByBlock.value[blockId] = []
       } finally {
         if (searchControllers.get(blockId) === controller) {
@@ -95,9 +133,9 @@ export const useWeatherStore = defineStore('weather', () => {
   }
 
   const addBlock = () => {
-    if (blocks.value.length === 5) return
-    const nextId = Math.max(0, ...blocks.value.map((block) => block.id)) + 1
-    blocks.value.push(createBlock(nextId))
+    if (blocks.value.length >= 5) return
+    blocks.value.push(createBlock(nextId()))
+    persistBlocks()
   }
 
   const setActiveBlockId = (id: number) => {
@@ -105,33 +143,70 @@ export const useWeatherStore = defineStore('weather', () => {
   }
 
   const changeFavorite = (block: WeatherBlock) => {
-    block.isStar = !block.isStar
-    localStorage.setItem('blocks', JSON.stringify(blocks.value))
+    if (!block.selectedCity) return
+    const key = cityKey(block.selectedCity)
+    const existingIndex = favoriteBlocks.value.findIndex(
+      (favorite) => favorite.selectedCity && cityKey(favorite.selectedCity) === key,
+    )
+
+    if (existingIndex >= 0) {
+      favoriteBlocks.value.splice(existingIndex, 1)
+      syncFavoriteState()
+      persistFavorites()
+      persistBlocks()
+      return
+    }
+
+    if (favoriteBlocks.value.length >= 5) {
+      isShowFavoriteLimitModal.value = true
+      return
+    }
+
+    favoriteBlocks.value.push({
+      ...createBlock(nextId()),
+      selectedCity: block.selectedCity,
+      searchQuery: block.selectedCity.name,
+      period: block.period,
+      weather: block.weather,
+      currentWeather: block.currentWeather,
+      chartPoints: [...block.chartPoints],
+      isStar: true,
+    })
+    syncFavoriteState()
+    persistFavorites()
+    persistBlocks()
   }
 
   const showConfirmModal = (block: WeatherBlock) => {
+    if (blocks.value.length <= 1) return
     isShowConfirmModal.value = true
     activeBlockId.value = block.id
   }
 
   const deleteBlock = () => {
-    if (activeBlockId.value !== null) {
-      const timeout = debounceTimeouts.get(activeBlockId.value)
-      if (timeout) clearTimeout(timeout)
-      debounceTimeouts.delete(activeBlockId.value)
-      searchControllers.get(activeBlockId.value)?.abort()
-      searchControllers.delete(activeBlockId.value)
-      delete searchResultsByBlock.value[activeBlockId.value]
-      delete searchLoadingByBlock.value[activeBlockId.value]
-      delete searchErrorByBlock.value[activeBlockId.value]
-      delete weatherLoadingByBlock.value[activeBlockId.value]
-      delete weatherErrorByBlock.value[activeBlockId.value]
-      weatherRequestIds.delete(activeBlockId.value)
+    if (blocks.value.length <= 1 || activeBlockId.value === null) {
+      isShowConfirmModal.value = false
+      activeBlockId.value = null
+      return
     }
-    blocks.value = blocks.value.filter((b) => b.id !== activeBlockId.value)
+
+    const blockId = activeBlockId.value
+    const timeout = debounceTimeouts.get(blockId)
+    if (timeout) clearTimeout(timeout)
+    debounceTimeouts.delete(blockId)
+    searchControllers.get(blockId)?.abort()
+    searchControllers.delete(blockId)
+    delete searchResultsByBlock.value[blockId]
+    delete searchLoadingByBlock.value[blockId]
+    delete searchErrorByBlock.value[blockId]
+    delete weatherLoadingByBlock.value[blockId]
+    delete weatherErrorByBlock.value[blockId]
+    weatherRequestIds.delete(blockId)
+
+    blocks.value = blocks.value.filter((block) => block.id !== blockId)
     isShowConfirmModal.value = false
     activeBlockId.value = null
-    localStorage.setItem('blocks', JSON.stringify(blocks.value))
+    persistBlocks()
   }
 
   const localDateKey = (unixSeconds: number, timezone: number) =>
@@ -177,6 +252,9 @@ export const useWeatherStore = defineStore('weather', () => {
       }))
   }
 
+  const isFavoriteBlock = (block: WeatherBlock) =>
+    favoriteBlocks.value.some((favorite) => favorite.id === block.id)
+
   const loadWeatherForBlock = async (block: WeatherBlock) => {
     if (!block.selectedCity) return
 
@@ -200,12 +278,13 @@ export const useWeatherStore = defineStore('weather', () => {
         currentWeather.dt,
         currentWeather.main.temp,
       )
-      localStorage.setItem('blocks', JSON.stringify(blocks.value))
-    } catch (e) {
+      if (isFavoriteBlock(block)) persistFavorites()
+      else persistBlocks()
+    } catch (error) {
       if (weatherRequestIds.get(block.id) !== requestId) return
-      weatherErrorByBlock.value[block.id] = axios.isAxiosError(e)
-        ? e.response?.data?.message || e.message
-        : (e as Error).message || 'Unknown error occurred'
+      weatherErrorByBlock.value[block.id] = axios.isAxiosError(error)
+        ? error.response?.data?.message || error.message
+        : (error as Error).message || i18n.global.t('errors.unknown')
     } finally {
       if (weatherRequestIds.get(block.id) === requestId) {
         weatherLoadingByBlock.value[block.id] = false
@@ -217,31 +296,32 @@ export const useWeatherStore = defineStore('weather', () => {
     block.selectedCity = city
     block.searchQuery = city.name
     block.showDropdown = false
+    syncFavoriteState()
     await loadWeatherForBlock(block)
   }
 
   const loadWeatherForBlocks = async () => {
-    await Promise.allSettled(blocks.value.map(loadWeatherForBlock))
+    await Promise.allSettled([...blocks.value, ...favoriteBlocks.value].map(loadWeatherForBlock))
   }
 
   const changePeriod = async (block: WeatherBlock, period: ForecastPeriod) => {
     block.period = period
-    if (block.selectedCity) {
-      await loadWeatherForBlock(block)
-    }
-    localStorage.setItem('blocks', JSON.stringify(blocks.value))
+    if (block.selectedCity) await loadWeatherForBlock(block)
+    if (isFavoriteBlock(block)) persistFavorites()
+    else persistBlocks()
   }
 
   return {
     blocks,
+    favoriteBlocks,
     searchResultsByBlock,
     searchLoadingByBlock,
     weatherLoadingByBlock,
     isShowConfirmModal,
+    isShowFavoriteLimitModal,
     searchErrorByBlock,
     weatherErrorByBlock,
     activeBlockId,
-    favoriteBlocks,
     loadBlocks,
     searchCities,
     selectCity,

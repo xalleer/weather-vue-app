@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  ariaLabel: string
+  label: string
   buttons: {
     isActive: boolean
     label: string
@@ -9,19 +9,19 @@ defineProps<{
 }>()
 
 defineEmits<{
-  (e: 'onClick', value: string): void
+  (e: 'change', value: string): void
 }>()
 </script>
 
 <template>
-  <div class="group" role="group" :aria-label="ariaLabel">
+  <div class="group" role="group" :aria-label="label">
     <template v-if="buttons.length > 1">
       <button
         v-for="btn of buttons"
         :key="btn.key"
         :class="{ active: btn.isActive }"
         :aria-pressed="btn.isActive"
-        @click="$emit('onClick', btn.key)"
+        @click="$emit('change', btn.key)"
       >
         {{ btn.label }}
       </button>

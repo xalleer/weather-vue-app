@@ -3,8 +3,10 @@ import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useLanguageStore } from '../stores/language.ts'
 import ToggleButtons from './ui/ToggleButtons.vue'
+import { useWeatherStore } from '../stores/weather.ts'
 
 const languageStore = useLanguageStore()
+const weatherStore = useWeatherStore()
 const isMenuOpen = ref(false)
 
 const languageButtons = computed(() => [
@@ -20,9 +22,10 @@ const closeMenu = () => {
   isMenuOpen.value = false
 }
 
-const handleLanguageChange = (language: string) => {
+const handleLanguageChange = async (language: string) => {
   if (language === 'UK' || language === 'EN') {
     languageStore.changeLanguage(language)
+    await weatherStore.loadWeatherForBlocks()
   }
 }
 </script>
@@ -39,16 +42,16 @@ const handleLanguageChange = (language: string) => {
         </nav>
 
         <ToggleButtons
-          aria-label="Мова інтерфейсу"
+          :label="$t('header.language')"
           :buttons="languageButtons"
-          @on-click="handleLanguageChange"
+          @change="handleLanguageChange"
         />
       </div>
 
       <button
         class="burger-btn"
         :class="{ open: isMenuOpen }"
-        aria-label="Toggle navigation menu"
+        :aria-label="$t('header.menu')"
         :aria-expanded="isMenuOpen"
         @click="toggleMenu"
       >
@@ -70,9 +73,9 @@ const handleLanguageChange = (language: string) => {
         </nav>
 
         <ToggleButtons
-          aria-label="Мова інтерфейсу"
+          :label="$t('header.language')"
           :buttons="languageButtons"
-          @on-click="handleLanguageChange"
+          @change="handleLanguageChange"
         />
       </div>
     </div>
