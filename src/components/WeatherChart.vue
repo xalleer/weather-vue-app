@@ -62,6 +62,7 @@ const renderChart = () => {
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
+        x: { offset: props.points.length === 1 },
         y: { ticks: { callback: (value) => `${value}°` } },
       },
     },

@@ -238,6 +238,19 @@ export const useWeatherStore = defineStore('weather', () => {
     return timeOfDay === 'night' ? isNight : !isNight
   }
 
+  const groupForecastsByLocalDate = (forecast: ForecastData, forecasts: ForecastData['list']) => {
+    const forecastsByDate = new Map<string, ForecastData['list']>()
+
+    forecasts.forEach((item) => {
+      const date = localDateKey(item.dt, forecast.city.timezone)
+      const dateForecasts = forecastsByDate.get(date) ?? []
+      dateForecasts.push(item)
+      forecastsByDate.set(date, dateForecasts)
+    })
+
+    return forecastsByDate
+  }
+
   const buildChartPoints = (
     forecast: ForecastData,
     period: ForecastPeriod,
@@ -270,11 +283,11 @@ export const useWeatherStore = defineStore('weather', () => {
         )
       }
 
-      const today = localDateKey(forecast.list[0]?.dt ?? 0, forecast.city.timezone)
-      const todayForecasts = matchingForecasts.filter(
-        (item) => localDateKey(item.dt, forecast.city.timezone) === today,
+      const forecastsByDate = groupForecastsByLocalDate(forecast, matchingForecasts)
+      const completeDayForecasts = Array.from(forecastsByDate.values()).find(
+        (dateForecasts) => dateForecasts.length > 1,
       )
-      const forecasts = todayForecasts.length ? todayForecasts : matchingForecasts.slice(0, 4)
+      const forecasts = completeDayForecasts ?? matchingForecasts.slice(0, 4)
 
       return forecasts.map((item) => ({
         key: String(item.dt + forecast.city.timezone),
@@ -283,10 +296,9 @@ export const useWeatherStore = defineStore('weather', () => {
     }
 
     const dailyTemperatures = new Map<string, number[]>()
-    matchingForecasts.forEach((item) => {
-      const date = localDateKey(item.dt, forecast.city.timezone)
+    groupForecastsByLocalDate(forecast, matchingForecasts).forEach((dateForecasts, date) => {
       const temperatures = dailyTemperatures.get(date) ?? []
-      temperatures.push(item.main.temp)
+      temperatures.push(...dateForecasts.map((item) => item.main.temp))
       dailyTemperatures.set(date, temperatures)
     })
 
